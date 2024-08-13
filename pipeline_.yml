@@ -1,0 +1,33 @@
+resources:
+ - name: my-repo
+   type: git
+   source:
+     uri: https://github.com/Viren0602/Vault-task.git
+     branch: main
+jobs:
+ - name: scrap-data-job
+   plan:
+     - get: my-repo
+       trigger: true
+     - task: scrap-data
+       config:
+         platform: linux
+         image_resource:
+           type: docker-image
+           source:
+             repository: python
+             tag: '3.9' # or another version compatible with your script
+         inputs:
+           - name: my-repo
+         run:
+           path: sh
+           args:
+             - -c
+             - |
+               set -ex
+               cd my-repo
+               pip install hvac  # Assuming you have a requirements file
+               pip install bs4
+               pip install pandas
+               python download.py  
+               ls -l
