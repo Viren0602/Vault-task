@@ -175,4 +175,248 @@ networks:
 
 # networks:
 #   concourse-net:
+
+
+
+
+
+
+
+
+
+
+
+
+
+# version: '3'
+ 
+# services:
+#   concourse-db:
+#     image: postgres
+#     ports: ["5432:5432"]
+#     environment:
+#       POSTGRES_DB: virenvc
+#       POSTGRES_PASSWORD: viren
+#       POSTGRES_USER: viren
+#       PGDATA: /database
+ 
+#   concourse:
+#     image: concourse/concourse
+#     command: quickstart
+#     privileged: true
+#     depends_on: [concourse-db]
+#     ports: ["8080:8080"]
+#     environment:
+#       CONCOURSE_POSTGRES_HOST: localhost
+#       CONCOURSE_POSTGRES_USER: viren
+#       CONCOURSE_POSTGRES_PASSWORD: viren
+#       CONCOURSE_POSTGRES_DATABASE: virenvc
+#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
+#       CONCOURSE_ADD_LOCAL_USER: test:test
+#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
+#       # instead of relying on the default "detect"
+#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+#       CONCOURSE_X_FRAME_OPTIONS: allow
+#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
+#       CONCOURSE_CLUSTER_NAME: tutorial
+#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+#       # For ARM-based machine, change the Concourse runtime to "houdini"
+#       CONCOURSE_WORKER_RUNTIME: "containerd"
+ 
+#   vault:
+#     image: hashicorp/vault:latest
+#     environment:
+#       VAULT_DEV_ROOT_TOKEN_ID: test
+#     ports:
+#       - "8200:8200"
+#     privileged: true
+
+
+
+
+
+
+# version: '3.8'
+
+# services:
+#   concourse-db:
+#     image: mysql:5.7
+#     environment:
+#       MYSQL_DATABASE: concourse
+#       MYSQL_ROOT_PASSWORD: concourse_pass
+#       MYSQL_USER: concourse_user
+#       MYSQL_PASSWORD: concourse_pass
+#     networks:
+#       - concourse-net
+
+#   concourse:
+#     image: concourse/concourse
+#     command: quickstart
+#     privileged: true
+#     depends_on: [concourse-db]
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - ./keys/host_key:/concourse-keys/host_key
+#       - ./keys/worker_key:/concourse-keys/worker_key
+#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
+#     environment:
+#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
+#       CONCOURSE_ADD_LOCAL_USER: test:test
+#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
+#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+#       CONCOURSE_X_FRAME_OPTIONS: allow
+#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
+#       CONCOURSE_CLUSTER_NAME: tutorial
+#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+#       CONCOURSE_WORKER_RUNTIME: "containerd"
+#     networks:
+#       - concourse-net
+
+# networks:
+#   concourse-net:
+
+
+
+
+
+
+
+# version: '3.8'
+
+# services:
+#   concourse-db:
+#     image: mysql:5.7
+#     environment:
+#       MYSQL_DATABASE: concourse
+#       MYSQL_ROOT_PASSWORD: concourse_pass
+#       MYSQL_USER: concourse_user
+#       MYSQL_PASSWORD: concourse_pass
+#     networks: 
+#       - concourse-net
+
+#   concourse:
+#     image: concourse/concourse
+#     command: quickstart
+#     privileged: true
+#     depends_on: [concourse-db]
+#     ports: 
+#       - "8080:8080"
+#     volumes:
+#       - ./keys/host_key:/concourse-keys/host_key
+#       - ./keys/worker_key:/concourse-keys/worker_key
+#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
+#     environment:
+#       # CONCOURSE_POSTGRES_HOST: concourse-db
+#       # CONCOURSE_POSTGRES_USER: concourse_user
+#       # CONCOURSE_POSTGRES_PASSWORD: concourse_pass
+#       # CONCOURSE_POSTGRES_DATABASE: concourse
+#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
+#       CONCOURSE_ADD_LOCAL_USER: test:test
+#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
+#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+#       CONCOURSE_X_FRAME_OPTIONS: allow
+#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
+#       CONCOURSE_CLUSTER_NAME: tutorial
+#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+#       CONCOURSE_WORKER_RUNTIME: "containerd"
+#     networks: 
+#       - concourse-net
+    
+#   vault:
+#    image: hashicorp/vault:latest
+#    environment:
+#      VAULT_DEV_ROOT_TOKEN_ID: test
+#    ports:
+#      - "8200:8200"
+#    privileged: true
+
+  # concourse-worker:
+  #   image: concourse/concourse
+  #   command: worker
+  #   environment:
+  #     CONCOURSE_TSA_HOST: concourse:2222
+  #     CONCOURSE_TSA_WORKER_PRIVATE_KEY: /concourse-keys/worker_key
+
+  #   depends_on:
+  #     - concourse
+  #   networks: 
+  #     - concourse-net
+
+# networks:
+#   concourse-net:
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#   version: '3'
+
+# services:
+#   concourse-db:
+#     image: postgres
+#     ports:
+#       - "5432:5432"
+#     environment:
+#       POSTGRES_DB: virenvc
+#       POSTGRES_USER: viren
+#       POSTGRES_PASSWORD: viren
+#       PGDATA: /database
+#     volumes:
+#       - pgdata:/database
+
+#   concourse:
+#     image: concourse/concourse
+#     command: quickstart
+#     privileged: true
+#     depends_on:
+#       - concourse-db
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       CONCOURSE_POSTGRES_HOST: concourse-db
+#       CONCOURSE_POSTGRES_USER: viren
+#       CONCOURSE_POSTGRES_PASSWORD: viren
+#       CONCOURSE_POSTGRES_DATABASE: virenvc
+#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
+#       CONCOURSE_ADD_LOCAL_USER: test:test
+#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
+#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+#       CONCOURSE_X_FRAME_OPTIONS: allow
+#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
+#       CONCOURSE_CLUSTER_NAME: tutorial
+#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+#       CONCOURSE_WORKER_RUNTIME: "containerd"
+
+#   vault:
+#     image: hashicorp/vault:latest
+#     environment:
+#       VAULT_DEV_ROOT_TOKEN_ID: test
+#     ports:
+#       - "8200:8200"
+#     privileged: true
+
+# volumes:
+#   pgdata:
