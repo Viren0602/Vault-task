@@ -3,6 +3,8 @@
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "plugin.name": "pgoutput",
+    "tasks.max": "1",
+    "connection.url": "jdbc:postgresql://192.168.3.174:5432/concourse",
     "database.hostname": "concourse-db",
     "database.port": "5432",
     "database.user": "concourse_user",
