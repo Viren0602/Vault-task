@@ -1,21 +1,128 @@
 version: '3.8'
- 
+
 services:
   concourse-db:
     image: postgres
+    ports:
+      - 5432:5432
+   
     environment:
       POSTGRES_DB: concourse
       POSTGRES_PASSWORD: concourse_pass
       POSTGRES_USER: concourse_user
       PGDATA: /database
+    # volumes:
+    #   # - ./postgresql.config:/etc/postgresql/jars
+    #   - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    # command: postgres -c config_file=/etc/postgresql/postgresql.conf
     networks:
       - concourse-net
- 
+  
+  postgres:
+    image: debezium/postgres:13
+    ports:
+      - 5432:5432
+    environment:
+        POSTGRES_USER: concourse_user
+        POSTGRES_PASSWORD: concourse_pass
+        POSTGRES_DB: concourse
+    command: ["postgres", "-c", "wal_level=logical"]
+      
+  #   volumes:
+  #     # - ./postgresql.config:/etc/postgresql/jars
+  #     - ./postgresql.conf:/etc/postgresql/postgresql.conf
+  #   command: postgres -c config_file=/etc/postgresql/postgresql.conf
+  #   networks:
+  #     - concourse-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - concourse-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - concourse-net
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - concourse-net
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_GROUP_ID: "quickstart"
+      CONNECT_CONFIG_STORAGE_TOPIC: quickstart-config
+      CONNECT_OFFSET_STORAGE_TOPIC: quickstart-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: quickstart-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_REST_PORT: 8083
+      CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
+    volumes:
+      - ./mysql-connector-java-8.0.28.jar:/usr/share/java/mysql-connector-java.jar
+      - ./kafka-connect-jdbc:/usr/share/java/kafka-connect-jdbc
+      - ./plugins:/etc/kafka-connect/jars
+    networks:
+      - concourse-net
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:latest
+    depends_on:
+      - kafka
+      - schema-registry
+      - kafka-connect
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:9092
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: kafka-connect:8083
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+    networks:
+      - concourse-net
+
   concourse:
     image: concourse/concourse
     command: quickstart
     privileged: true
-    depends_on: [concourse-db]
+    depends_on:
+      - concourse-db
     ports:
       - "8080:8080"
     environment:
@@ -36,16 +143,16 @@ services:
       CONCOURSE_WORKER_RUNTIME: "containerd"
     networks:
       - concourse-net
- 
-  concourse-worker:
-    image: concourse/concourse
-    command: worker
-    environment:
-      CONCOURSE_TSA_HOST: concourse:2222
-    depends_on:
-      - concourse
-    networks:
-      - concourse-net
+
+  # concourse-worker:
+  #   image: concourse/concourse
+  #   command: worker
+  #   environment:
+  #     CONCOURSE_TSA_HOST: concourse:2222
+  #   depends_on:
+  #     - concourse
+  #   networks:
+  #     - concourse-net
 
   vault:
     image: hashicorp/vault:latest
@@ -53,7 +160,9 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: test
     ports:
       - "8200:8200"
-    privileged: true 
+    privileged: true
+    networks:
+      - concourse-net
 
 networks:
   concourse-net:
@@ -63,341 +172,110 @@ networks:
 
 
 
-
-
 # version: '3.8'
-
-# services:
-#   concourse-db:
-#     image: mysql:5.7
-#     environment:
-#       MYSQL_DATABASE: concourse
-#       MYSQL_ROOT_PASSWORD: concourse_pass
-#       MYSQL_USER: concourse_user
-#       MYSQL_PASSWORD: concourse_pass
-#     networks:
-#       - concourse-net
-
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
-#     depends_on: [concourse-db]
-#     ports:
-#       - "8080:8080"
-#     volumes:
-#       - ./keys/host_key:/concourse-keys/host_key
-#       - ./keys/worker_key:/concourse-keys/worker_key
-#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
-#     environment:
-#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
-#       CONCOURSE_ADD_LOCAL_USER: test:test
-#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
-#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-#       CONCOURSE_X_FRAME_OPTIONS: allow
-#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
-#       CONCOURSE_CLUSTER_NAME: tutorial
-#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-#       CONCOURSE_WORKER_RUNTIME: "containerd"
-#     networks:
-#       - concourse-net
-
-  # 
-
-  # networks:
-  # concourse-net:
-
-
-# version: '3.8'
-
-# services:
-#   concourse-db:
-#     image: mysql:5.7
-#     environment:
-#       MYSQL_DATABASE: concourse
-#       MYSQL_ROOT_PASSWORD: concourse_pass
-#       MYSQL_USER: concourse_user
-#       MYSQL_PASSWORD: concourse_pass
-#     networks: 
-#       - concourse-net
-
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
-#     depends_on: [concourse-db]
-#     ports: 
-#       - "8080:8080"
-#     volumes:
-#       - ./keys/host_key:/concourse-keys/host_key
-#       - ./keys/worker_key:/concourse-keys/worker_key
-#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
-#     environment:
-#       # CONCOURSE_POSTGRES_HOST: concourse-db
-#       # CONCOURSE_POSTGRES_USER: concourse_user
-#       # CONCOURSE_POSTGRES_PASSWORD: concourse_pass
-#       # CONCOURSE_POSTGRES_DATABASE: concourse
-#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
-#       CONCOURSE_ADD_LOCAL_USER: test:test
-#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
-#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-#       CONCOURSE_X_FRAME_OPTIONS: allow
-#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
-#       CONCOURSE_CLUSTER_NAME: tutorial
-#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-#       CONCOURSE_WORKER_RUNTIME: "containerd"
-#     networks: 
-#       - concourse-net
-    
-#   vault:
-#    image: hashicorp/vault:latest
-#    environment:
-#      VAULT_DEV_ROOT_TOKEN_ID: test
-#    ports:
-#      - "8200:8200"
-#    privileged: true
-
-#   # concourse-worker:
-#   #   image: concourse/concourse
-#   #   command: worker
-#   #   environment:
-#   #     CONCOURSE_TSA_HOST: concourse:2222
-#   #     CONCOURSE_TSA_WORKER_PRIVATE_KEY: /concourse-keys/worker_key
-
-#   #   depends_on:
-#   #     - concourse
-#   #   networks: 
-#   #     - concourse-net
-
-# networks:
-#   concourse-net:
-
-
-
-
-
-
-
-
-
-
-
-
-
-# version: '3'
  
 # services:
 #   concourse-db:
 #     image: postgres
-#     ports: ["5432:5432"]
+#     ports: ['5432:5432']
 #     environment:
-#       POSTGRES_DB: virenvc
-#       POSTGRES_PASSWORD: viren
-#       POSTGRES_USER: viren
+#       POSTGRES_DB: concourse
+#       POSTGRES_PASSWORD: concourse_pass
+#       POSTGRES_USER: concourse_user
 #       PGDATA: /database
- 
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
-#     depends_on: [concourse-db]
-#     ports: ["8080:8080"]
-#     environment:
-#       CONCOURSE_POSTGRES_HOST: localhost
-#       CONCOURSE_POSTGRES_USER: viren
-#       CONCOURSE_POSTGRES_PASSWORD: viren
-#       CONCOURSE_POSTGRES_DATABASE: virenvc
-#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
-#       CONCOURSE_ADD_LOCAL_USER: test:test
-#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
-#       # instead of relying on the default "detect"
-#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-#       CONCOURSE_X_FRAME_OPTIONS: allow
-#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
-#       CONCOURSE_CLUSTER_NAME: tutorial
-#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-#       # For ARM-based machine, change the Concourse runtime to "houdini"
-#       CONCOURSE_WORKER_RUNTIME: "containerd"
- 
-#   vault:
-#     image: hashicorp/vault:latest
-#     environment:
-#       VAULT_DEV_ROOT_TOKEN_ID: test
-#     ports:
-#       - "8200:8200"
-#     privileged: true
-
-
-
-
-
-
-# version: '3.8'
-
-# services:
-#   concourse-db:
-#     image: mysql:5.7
-#     environment:
-#       MYSQL_DATABASE: concourse
-#       MYSQL_ROOT_PASSWORD: concourse_pass
-#       MYSQL_USER: concourse_user
-#       MYSQL_PASSWORD: concourse_pass
 #     networks:
 #       - concourse-net
 
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
-#     depends_on: [concourse-db]
-#     ports:
-#       - "8080:8080"
-#     volumes:
-#       - ./keys/host_key:/concourse-keys/host_key
-#       - ./keys/worker_key:/concourse-keys/worker_key
-#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:latest
 #     environment:
-#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
-#       CONCOURSE_ADD_LOCAL_USER: test:test
-#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
-#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-#       CONCOURSE_X_FRAME_OPTIONS: allow
-#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
-#       CONCOURSE_CLUSTER_NAME: tutorial
-#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-#       CONCOURSE_WORKER_RUNTIME: "containerd"
-#     networks:
-#       - concourse-net
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#       ZOOKEEPER_TICK_TIME: 2000
 
-# networks:
-#   concourse-net:
-
-
-
-
-
-
-
-# version: '3.8'
-
-# services:
-#   concourse-db:
-#     image: mysql:5.7
-#     environment:
-#       MYSQL_DATABASE: concourse
-#       MYSQL_ROOT_PASSWORD: concourse_pass
-#       MYSQL_USER: concourse_user
-#       MYSQL_PASSWORD: concourse_pass
-#     networks: 
-#       - concourse-net
-
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
-#     depends_on: [concourse-db]
-#     ports: 
-#       - "8080:8080"
-#     volumes:
-#       - ./keys/host_key:/concourse-keys/host_key
-#       - ./keys/worker_key:/concourse-keys/worker_key
-#       - ./keys/session_signing_key:/concourse-keys/session_signing_key
-#     environment:
-#       # CONCOURSE_POSTGRES_HOST: concourse-db
-#       # CONCOURSE_POSTGRES_USER: concourse_user
-#       # CONCOURSE_POSTGRES_PASSWORD: concourse_pass
-#       # CONCOURSE_POSTGRES_DATABASE: concourse
-#       CONCOURSE_EXTERNAL_URL: http://localhost:8080
-#       CONCOURSE_ADD_LOCAL_USER: test:test
-#       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
-#       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-#       CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-#       CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-#       CONCOURSE_X_FRAME_OPTIONS: allow
-#       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
-#       CONCOURSE_CLUSTER_NAME: tutorial
-#       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-#       CONCOURSE_WORKER_RUNTIME: "containerd"
-#     networks: 
-#       - concourse-net
-    
-#   vault:
-#    image: hashicorp/vault:latest
-#    environment:
-#      VAULT_DEV_ROOT_TOKEN_ID: test
-#    ports:
-#      - "8200:8200"
-#    privileged: true
-
-  # concourse-worker:
-  #   image: concourse/concourse
-  #   command: worker
-  #   environment:
-  #     CONCOURSE_TSA_HOST: concourse:2222
-  #     CONCOURSE_TSA_WORKER_PRIVATE_KEY: /concourse-keys/worker_key
-
-  #   depends_on:
-  #     - concourse
-  #   networks: 
-  #     - concourse-net
-
-# networks:
-#   concourse-net:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#   version: '3'
-
-# services:
-#   concourse-db:
-#     image: postgres
-#     ports:
-#       - "5432:5432"
-#     environment:
-#       POSTGRES_DB: virenvc
-#       POSTGRES_USER: viren
-#       POSTGRES_PASSWORD: viren
-#       PGDATA: /database
-#     volumes:
-#       - pgdata:/database
-
-#   concourse:
-#     image: concourse/concourse
-#     command: quickstart
-#     privileged: true
+#   kafka:
+#     image: confluentinc/cp-kafka:latest
 #     depends_on:
-#       - concourse-db
+#       - zookeeper
+#     ports:
+#       - "9092:9092"
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+#   schema-registry:
+#     image: confluentinc/cp-schema-registry:latest
+#     depends_on:
+#       - kafka
+#     ports:
+#       - "8081:8081"
+#     environment:
+#       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+#       SCHEMA_REGISTRY_HOST_NAME: schema-registry
+#       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+#   kafka-connect:
+#     image: confluentinc/cp-kafka-connect:latest
+#     depends_on:
+#       - kafka
+#       - schema-registry
+#     ports:
+#       - "8083:8083"
+#     environment:
+#       CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+#       CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+#       CONNECT_GROUP_ID: "quickstart"
+#       CONNECT_CONFIG_STORAGE_TOPIC: quickstart-config
+#       CONNECT_OFFSET_STORAGE_TOPIC: quickstart-offsets
+#       CONNECT_STATUS_STORAGE_TOPIC: quickstart-status
+#       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+#       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+#       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+#       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#       CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#       CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#       CONNECT_REST_PORT: 8083
+#       CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
+      
+#     volumes:
+#       - ./mysql-connector-java-8.0.28.jar:/usr/share/java/mysql-connector-java.jar
+#       - ./kafka-connect-jdbc:/usr/share/java/kafka-connect-jdbc
+#       - ./plugins:/etc/kafka-connect/jars
+#       - ./kafka-connect-jdbc:/usr/share/java/kafka-connect-jdbc
+
+#   control-center:
+#     image: confluentinc/cp-enterprise-control-center:latest
+#     depends_on:
+#       - kafka
+#       - schema-registry
+#       - kafka-connect
+#     ports:
+#       - "9021:9021"
+#     environment:
+#       CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:9092
+#       CONTROL_CENTER_ZOOKEEPER_CONNECT: zookeeper:2181
+#       CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: kafka-connect:8083
+#       CONTROL_CENTER_KSQL_KSQLDB1_URL: http://ksqldb-server:8088
+#       CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: http://localhost:8088
+#       CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+#       CONTROL_CENTER_REPLICATION_FACTOR: 1
+
+
+ 
+#   concourse:
+#     image: concourse/concourse
+#     command: quickstart
+#     privileged: true
+#     depends_on: [concourse-db]
 #     ports:
 #       - "8080:8080"
 #     environment:
 #       CONCOURSE_POSTGRES_HOST: concourse-db
-#       CONCOURSE_POSTGRES_USER: viren
-#       CONCOURSE_POSTGRES_PASSWORD: viren
-#       CONCOURSE_POSTGRES_DATABASE: virenvc
+#       CONCOURSE_POSTGRES_USER: concourse_user
+#       CONCOURSE_POSTGRES_PASSWORD: concourse_pass
+#       CONCOURSE_POSTGRES_DATABASE: concourse
 #       CONCOURSE_EXTERNAL_URL: http://localhost:8080
 #       CONCOURSE_ADD_LOCAL_USER: test:test
 #       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
@@ -409,6 +287,18 @@ networks:
 #       CONCOURSE_CLUSTER_NAME: tutorial
 #       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
 #       CONCOURSE_WORKER_RUNTIME: "containerd"
+#     networks:
+#       - concourse-net
+
+#   concourse-worker:
+#     image: concourse/concourse
+#     command: worker
+#     environment:
+#       CONCOURSE_TSA_HOST: concourse:2222
+#     depends_on:
+#       - concourse
+#     networks:
+#       - concourse-net
 
 #   vault:
 #     image: hashicorp/vault:latest
@@ -416,7 +306,12 @@ networks:
 #       VAULT_DEV_ROOT_TOKEN_ID: test
 #     ports:
 #       - "8200:8200"
-#     privileged: true
+#     privileged: true 
 
-# volumes:
-#   pgdata:
+# networks:
+#   concourse-net:
+
+  
+
+
+
