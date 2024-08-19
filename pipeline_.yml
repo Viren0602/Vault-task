@@ -1,33 +1,109 @@
 resources:
- - name: my-repo
-   type: git
-   source:
-     uri: https://github.com/Viren0602/Vault-task.git
-     branch: main
+  - name: my-repo
+    type: git
+    source:
+      uri: https://github.com/Viren0602/Vault-task.git
+      branch: main
+
 jobs:
- - name: scrap-data-job
-   plan:
-     - get: my-repo
-       trigger: true
-     - task: scrap-data
-       config:
-         platform: linux
-         image_resource:
-           type: docker-image
-           source:
-             repository: python
-             tag: '3.9' # or another version compatible with your script
-         inputs:
-           - name: my-repo
-         run:
-           path: sh
-           args:
-             - -c
-             - |
-               set -ex
-               cd my-repo
-               pip install hvac  # Assuming you have a requirements file
-               pip install bs4
-               pip install pandas
-               python download.py  
-               ls -l
+  - name: scrap-data-job
+    plan:
+      - get: my-repo
+        trigger: true
+
+      - task: scrap-data
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: python
+              tag: '3.9'
+          inputs:
+            - name: my-repo
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                apt-get update
+                apt-get install -y unzip wget
+
+                # Download and install Vault
+                wget https://releases.hashicorp.com/vault/1.13.1/vault_1.13.1_linux_amd64.zip
+                unzip vault_1.13.1_linux_amd64.zip
+                mv vault /usr/local/bin/
+                rm vault_1.13.1_linux_amd64.zip
+
+                # Set up Vault environment variables
+                export VAULT_ADDR='http://192.168.3.174:8200'
+                export VAULT_TOKEN='test'
+
+                # Retrieve secrets from Vault
+                screener_username=$(vault kv get -field=username secret/myapp)
+                screener_password=$(vault kv get -field=password secret/myapp)
+
+                # Print retrieved secrets
+                echo "Retrieved Screener Username: $screener_username"
+                echo "Retrieved Screener Password: $screener_password"
+
+                set -ex
+                cd my-repo
+
+                # Install Python dependencies
+                pip install hvac bs4 pandas mysql-connector-python
+
+                # Run the download script
+                chmod +x download.py
+                python download.py
+
+                # List files in the directory
+                ls -l
+
+                # Install DNS utilities and perform a DNS lookup
+                apt-get update
+                apt-get install -y dnsutils
+                nslookup www.screener.in
+
+
+
+
+
+
+
+
+
+
+# resources:
+#  - name: my-repo
+#    type: git
+#    source:
+#      uri: https://github.com/Viren0602/Vault-task.git
+#      branch: main
+# jobs:
+#  - name: scrap-data-job
+#    plan:
+#      - get: my-repo
+#        trigger: true
+#      - task: scrap-data
+#        config:
+#          platform: linux
+#          image_resource:
+#            type: docker-image
+#            source:
+#              repository: python
+#              tag: '3.9' # or another version compatible with your script
+#          inputs:
+#            - name: my-repo
+#          run:
+#            path: sh
+#            args:
+#              - -c
+#              - |
+#                set -ex
+#                cd my-repo
+#                pip install hvac  # Assuming you have a requirements file
+#                pip install bs4
+#                pip install pandas
+#                python download.py  
+#                ls -l
