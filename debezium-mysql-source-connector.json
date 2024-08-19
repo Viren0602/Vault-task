@@ -1,0 +1,22 @@
+{
+    "name": "mysql-source-connector",
+    "config": {
+      "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+      "tasks.max": "1",
+      "database.server.name": "mysql_db_server",
+      "database.hostname": "mysql",
+      "database.port": "3306",
+      "database.user": "root",
+      "database.password": "test",
+      "database.whitelist": "connect_test",
+      "table.whitelist": "connect_test.profit_loss_data",
+      "database.history.kafka.bootstrap.servers": "kafka:9092",
+      "database.history.kafka.topic": "dbhistory.connect_test",
+      "include.schema.changes": "true",
+      "transforms": "route",
+      "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+      "transforms.route.regex": "connect_test\\.profit_loss_data",
+      "transforms.route.replacement": "profit_loss_data"
+    }
+  }
+  
