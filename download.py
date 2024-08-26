@@ -228,9 +228,9 @@ def main():
                     print(df_ttm.head(20))
 
                     db_host = "192.168.3.174"
-                    db_name = "50_companies"
-                    db_user = "viren"
-                    db_password = "viren"
+                    db_name = "concourse"
+                    db_user = "concourse_user"
+                    db_password = "concourse_pass"
                     db_port = "5432"
 
                     
