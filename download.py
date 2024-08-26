@@ -229,9 +229,9 @@ def main():
 
                     db_user = "root"
                     db_password = "test"
-                    db_host = "localhost"
+                    db_host = "mysql"
                     db_name = "connect_test"
-                    db_port = "3307"
+                    db_port = "3306"  # Change to '3306'
                     
                     engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
                     
