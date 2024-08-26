@@ -227,13 +227,21 @@ def main():
                     print("TTM DataFrame:")
                     print(df_ttm.head(20))
 
-                    db_user = "root"
-                    db_password = "test"
                     db_host = "192.168.3.174"
-                    db_name = "connect_test"
-                    db_port = "3306"  # Change to '3306'
+                    db_name = "50_companies"
+                    db_user = "viren"
+                    db_password = "viren"
+                    db_port = "5432"
+
                     
-                    engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+                    
+                    # db_user = "root"
+                    # db_password = "test"
+                    # db_host = "localhost"
+                    # db_name = "connect_test1"
+                    # db_port = "3306"  # Change to '3306' 
+                    
+                    engine = create_engine(f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
                     
                     df_melted.to_sql('profit_loss_50_companies', con=engine, if_exists='append', index=False, dtype={'ttm_id': Integer})
 
