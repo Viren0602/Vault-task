@@ -229,7 +229,7 @@ def main():
 
                     db_user = "root"
                     db_password = "test"
-                    db_host = "localhost"
+                    db_host = "192.168.3.174"
                     db_name = "connect_test"
                     db_port = "3306"  # Change to '3306'
                     
