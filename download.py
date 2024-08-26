@@ -101,7 +101,9 @@ import csv
 from sqlalchemy import create_engine, Integer
 from sqlalchemy.sql import text
 import time
+import pymysql 
 
+# Function to check if a column exists in a table
 def column_exists(connection, table_name, column_name):
     result = connection.execute(text(f"""
         SELECT COUNT(*)
@@ -130,7 +132,7 @@ def fetch_data(url, retries=3, delay=5):
 
 def main():
     try:
-        df_symbols = pd.read_csv('ind_nifty50list.csv')
+        df_symbols = pd.read_csv('C:/Users/VirenKhanna/Desktop/vault/method-2/ind_nifty50list.csv')
         
         print("Column names in CSV file:", df_symbols.columns)
         
@@ -227,21 +229,14 @@ def main():
                     print("TTM DataFrame:")
                     print(df_ttm.head(20))
 
-                    db_host = "192.168.3.174"
-                    db_name = "concourse"
-                    db_user = "concourse_user"
-                    db_password = "concourse_pass"
-                    db_port = "5432"
-
                     
+                    db_user = "root"
+                    db_password = "test"
+                    db_host = "localhost"
+                    db_name = "connect_test"
+                    db_port = "3307"  # Change to '3306' 
                     
-                    # db_user = "root"
-                    # db_password = "test"
-                    # db_host = "localhost"
-                    # db_name = "connect_test1"
-                    # db_port = "3306"  # Change to '3306' 
-                    
-                    engine = create_engine(f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+                    engine = create_engine(f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
                     
                     df_melted.to_sql('profit_loss_50_companies', con=engine, if_exists='append', index=False, dtype={'ttm_id': Integer})
 
@@ -269,8 +264,8 @@ def main():
                                 print(f"Error adding column to ttm_50_companies: {e}")
 
                         update_ttm_id_sql = """
-                            UPDATE profit_loss_50_companies AS pl
-                            JOIN ttm_50_companies AS ttm
+                            UPDATE profit_loss_50_companies pl
+                            JOIN ttm_50_companies ttm
                             ON pl.Narration = ttm.Narration
                             SET pl.ttm_id = ttm.id;
                         """
@@ -303,6 +298,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
