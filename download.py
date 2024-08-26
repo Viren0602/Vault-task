@@ -229,7 +229,7 @@ def main():
 
                     db_user = "root"
                     db_password = "test"
-                    db_host = "host.docker.internal"
+                    db_host = "localhost"
                     db_name = "connect_test"
                     db_port = "3307"
                     
