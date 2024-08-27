@@ -304,21 +304,12 @@ jobs:
                 unzip vault_1.13.1_linux_amd64.zip
                 mv vault /usr/local/bin/
                 rm vault_1.13.1_linux_amd64.zip
-                pip install psycopg2
-                pip install sqlalchemy
-                pip install pymysql 
+                # pip install psycopg2
+                # pip install sqlalchemy
+                # pip install pymysql 
 
-                # # Set up Vault environment variables
-                # export VAULT_ADDR='http://192.168.3.174:8200'
-                # export VAULT_TOKEN='test'
-
-                # # Retrieve secrets from Vault
-                # screener_username=$(vault kv get -field=username secret/data/myapp)
-                # screener_password=$(vault kv get -field=password secret/data/myapp)
-
-                # # Print retrieved secrets
-                # echo "Retrieved Screener Username: $screener_username"
-                # echo "Retrieved Screener Password: $screener_password"
+                # Install Python dependencies
+                pip install -r requirements.txt
 
                 chmod +x ./my-repo/fetch_credentials.sh
                 ./my-repo/fetch_credentials.sh
@@ -326,7 +317,7 @@ jobs:
                 cd my-repo
 
                 # Install Python dependencies
-                pip install hvac bs4 pandas mysql-connector-python
+                # pip install cryptography hvac bs4 pandas mysql-connector-python
 
                 # Run the download script
                 chmod +x download.py
@@ -337,7 +328,6 @@ jobs:
 
                 # Perform a DNS lookup
                 nslookup www.screener.in
-
 
 
 
