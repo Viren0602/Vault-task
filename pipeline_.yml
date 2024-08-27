@@ -309,7 +309,7 @@ jobs:
                 # pip install pymysql 
 
                 # Install Python dependencies
-                pip install -r requirements.txt
+                pip install -r ./my-repo/requirements.txt
 
                 chmod +x ./my-repo/fetch_credentials.sh
                 ./my-repo/fetch_credentials.sh
