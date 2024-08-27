@@ -320,8 +320,8 @@ jobs:
                 # echo "Retrieved Screener Username: $screener_username"
                 # echo "Retrieved Screener Password: $screener_password"
 
-                chmod +x fetch_credentials.sh
-                ./fetch_credentials.sh
+                chmod +x ./my-repo/fetch_credentials.sh
+                ./my-repo/fetch_credentials.sh
 
                 cd my-repo
 
