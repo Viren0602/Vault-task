@@ -230,9 +230,9 @@ def main():
                     print(df_ttm.head(20))
 
                     
-                    db_user = "avc"
+                    db_user = "root"
                     db_password = "test"
-                    db_host = "mysql"
+                    db_host = "192.168.3.174"
                     db_name = "connect_test"
                     db_port = "3307"  # Change to '3306' 
                     
