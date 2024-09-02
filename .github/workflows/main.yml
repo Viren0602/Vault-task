@@ -1,0 +1,267 @@
+
+# resources:
+#   - name: my-repo
+#     type: git
+#     source:
+#       uri: https://github.com/Viren0602/Vault-task.git
+#       branch: main
+
+# jobs:
+#   - name: scrap-data-job
+#     plan:
+#       - get: my-repo
+#         trigger: true
+#       - task: scrap-data
+#         config:
+#           platform: linux
+#           image_resource:
+#             type: docker-image
+#             source:
+#               repository: python
+#               tag: '3.9'
+#           inputs:
+#             - name: my-repo
+#           run:
+#             path: sh
+#             args:
+#               - -c
+#               - |
+#                 apt-get update
+#                 apt-get install -y unzip wget
+#                 wget https://releases.hashicorp.com/vault/1.13.1/vault_1.13.1_linux_amd64.zip
+#                 unzip vault_1.13.1_linux_amd64.zip
+#                 mv vault /usr/local/bin/
+#                 rm vault_1.13.1_linux_amd64.zip
+#                 pip install sqlalchemy
+
+#                 # Install dependencies
+#                 pip install hvac bs4 pandas psycopg2
+
+#                 # Export environment variables for Vault
+#                 export VAULT_ADDR='http://192.168.3.174:8200'
+#                 export VAULT_TOKEN='test'
+
+#                 # Retrieve secrets from Vault
+#                 screener_username=$(vault kv get -field=username secret/myapp)
+#                 screener_password=$(vault kv get -field=password secret/myapp)
+#                 echo "Retrieved Screener Username: $screener_username"
+#                 echo "Retrieved Screener Password: $screener_password"
+
+#                 set -ex
+#                 cd my-repo
+
+#                 # Run the Python script
+#                 python download.py
+#                 ls -l
+
+
+
+
+# resources:
+#   - name: my-repo
+#     type: git
+#     source:
+#       uri: https://github.com/Viren0602/Vault-task.git
+#       branch: main
+
+# jobs:
+# #   - name: scrap-data-job
+#     plan:
+#       - get: my-repo
+#         trigger: true
+
+#       - task: scrap-data
+#         config:
+#           platform: linux
+#           image_resource:
+#             type: docker-image
+#             source:
+#               repository: python
+#               tag: '3.9'
+#           inputs:
+#             - name: my-repo
+#           run:
+#             path: sh
+#             args:
+#               - -c
+#               - |
+#                 set -ex
+#                 apt-get update
+#                 apt-get install -y unzip wget dnsutils
+
+#                 # Download and install Vault
+#                 wget https://releases.hashicorp.com/vault/1.13.1/vault_1.13.1_linux_amd64.zip
+#                 unzip vault_1.13.1_linux_amd64.zip
+#                 mv vault /usr/local/bin/
+#                 rm vault_1.13.1_linux_amd64.zip
+
+#                 # Set up Vault environment variables
+#                 export VAULT_ADDR='http://192.168.3.174:8200'
+#                 export VAULT_TOKEN='test'
+
+#                 # Retrieve secrets from Vault
+#                 screener_username=$(vault kv get -field=username secret/myapp)
+#                 screener_password=$(vault kv get -field=password secret/myapp)
+
+#                 # Print retrieved secrets
+#                 echo "Retrieved Screener Username: $screener_username"
+#                 echo "Retrieved Screener Password: $screener_password"
+
+#                 cd my-repo
+
+#                 # Install Python dependencies
+#                 pip install hvac bs4 pandas mysql-connector-python
+
+#                 # Run the download script
+#                 chmod +x download.py
+#                 python download.py
+
+#                 # List files in the directory
+#                 ls -l
+
+#                 # Perform a DNS lookup
+#                 nslookup www.screener.in
+
+
+
+# resources:
+#   - name: git-repo
+#     type: git
+#     source:
+#       uri: https://github.com/Viren0602/Vault-task.git
+#       branch: main
+ 
+# jobs:
+#   - name: scrape-and-store
+#     plan:
+#       - get: git-repo
+#         trigger: true
+#       - task: fetch-credentials
+#         config:
+#           platform: linux
+#           image_resource:
+#             type: docker-image
+#             source:
+#               repository: hashicorp/vault
+#               tag: latest
+#           inputs:
+#             - name: git-repo
+#           run:
+#             path: /bin/sh
+#             args:
+#               - -c
+#               - |
+#                 chmod +x ./git-repo/credentials.sh
+#                 ./git-repo/credentials.sh
+#           outputs:
+#             - name: credentials
+ 
+#       - task: scrape-task
+#         config:
+#           platform: linux
+#           image_resource:
+#             type: registry-image
+#             source:
+#               repository: python
+#               tag: "3.9"
+#           inputs:
+#             - name: git-repo
+#             - name: credentials
+#           run:
+#             path: /bin/bash
+#             args:
+#               - -c
+#               - |
+#                 cd git-repo
+#                 pip install -r requirements.txt
+#                 EMAIL=$(cat ../credentials/email.txt)
+#                 PASSWORD=$(cat ../credentials/password.txt)
+#                 echo "$EMAIL"
+#                 echo "$PASSWORD"
+#                 python scrape_data.py --email "$EMAIL" --password "$PASSWORD" --db "connect_test" --user "root" --pw "root" --host "192.168.1.51" --port "3306"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# original
+
+resources:
+  - name: my-repo
+    type: git
+    source:
+      uri: https://github.com/Viren0602/Vault-task.git
+      branch: main
+
+jobs:
+  - name: scrap-data-job
+    plan:
+      - get: my-repo
+        trigger: true
+
+      - task: scrap-data
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: python
+              tag: '3.9'
+          inputs:
+            - name: my-repo
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                set -ex
+                apt-get update
+                apt-get install -y unzip wget dnsutils
+
+                # Download and install Vault
+                wget https://releases.hashicorp.com/vault/1.13.1/vault_1.13.1_linux_amd64.zip
+                unzip vault_1.13.1_linux_amd64.zip
+                mv vault /usr/local/bin/
+                rm vault_1.13.1_linux_amd64.zip
+                
+                # Install Python dependencies
+                pip install -r ./my-repo/requirements.txt
+
+                chmod +x ./my-repo/fetch_credentials.sh
+                ./my-repo/fetch_credentials.sh
+
+                cd my-repo
+
+                
+
+                # Run the download script
+                chmod +x download.py
+                python download.py
+
+                # List files in the directory
+                # ls -l
+
+                # Perform a DNS lookup
+                nslookup www.screener.in
+
+
+
+
+
+
+
+
